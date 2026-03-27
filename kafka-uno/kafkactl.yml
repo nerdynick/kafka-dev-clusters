@@ -1,0 +1,10 @@
+contexts:
+  default:
+    brokers:
+      - 0.0.0.0:9093
+    tls:
+      enabled: true
+      ca: ./output/KafkaClusterCA-cert.pem
+      cert: ./output/KafkaClientNoEnc-cert.pem
+      certKey: ./output/KafkaClientNoEnc-key.pem
+      insecure: false

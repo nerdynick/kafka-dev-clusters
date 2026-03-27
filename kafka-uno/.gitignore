@@ -1,0 +1,4 @@
+output/**
+secrets/**
+data/**
+./Makefile.tls

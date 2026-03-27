@@ -1,0 +1,25 @@
+name: Build via Append and Release to GH & Docker
+
+on:
+  push:
+    branches: 
+      - main
+    paths:
+      - 'VERSION'
+jobs:
+  build:
+    name: Build-Append and Release (Docker Hub)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      attestations: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+      - name: Tarball Envs
+        run: make package-all
+      - name: Github Release
+        run: make github-create-release github-upload github-publish-release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPO: ${{ github.repository }}
