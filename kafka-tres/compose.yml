@@ -1,0 +1,152 @@
+---
+services:
+  broker01:
+    image: apache/kafka:latest
+    ports:
+      - 9091:9091
+      - 9092:9092
+      - 9093:9093
+    volumes:
+      - ./secrets:/etc/kafka/secrets
+      - ./data01:/var/lib/kafka/data
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'INTERNAL-SSL:SSL,EXTERNAL-SSL:SSL,CONTROLLER:PLAINTEXT'
+      # NOTE: Both these following checks leverage KAFKA_ADVERTISED_LISTENERS to eval, 
+      #     See https://github.com/apache/kafka/blob/ccd8330e9eb0e2439f1d025282bef8b724d6ec1d/docker/resources/common-scripts/configure#L68
+      #     `SSL://` in a listener name is required to leverage in build secrets handling
+      #     `SASL_<.*>://` in a listener name is required to leverage the in build scripts
+      # 
+      # NOTE: Be sure to modify the EXTERNAL-SSL listener's address to match the domain or IP.
+      #     The use of 0.0.0.0 will only work in local-only environments.
+      #     The setup.sh script doesn't take care of this, yet.
+      KAFKA_LISTENERS: 'INTERNAL-SSL://:9091,EXTERNAL-SSL://:9092,CONTROLLER://:9093'
+      KAFKA_ADVERTISED_LISTENERS: 'INTERNAL-SSL://broker01:9091,EXTERNAL-SSL://localhost:9092'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'INTERNAL-SSL'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@broker01:9093,2@broker02:9096,3@broker03:9099'
+      KAFKA_LOG_DIRS: '/var/lib/kafka/data'
+      # NOTE: Cluster ID is a Random UUID, that's been base64 encoded and truncated down to 16bits
+      #     Read more here: https://sleeplessbeastie.eu/2021/10/22/how-to-generate-kafka-cluster-id/
+      #     Create your own, if you want:
+      #       - Linux 1 liner: cat /proc/sys/kernel/random/uuid | tr -d '-' | base64 | cut -b 1-22
+      #       - Via Kafka Script: ./bin/kafka-storage.sh random-uuid
+      CLUSTER_ID: 'ZGVjYzlmYjM0YjJhNDE1Yz'
+      # NOTE: Running the setup.sh script is required to leverage the in build secrets creation & handling
+      #     Otherwise, you can create the secrets yourself and them to ./secrets folder
+      #     This repo can assist in creating the TLS Certificates if you are unfamiliar with the process: https://github.com/nerdynick/keystore-scripts
+      # NOTE: We use PKCS12 (.p12) stores instead of the traditional JKS (.jks) stores. 
+      #     This save you from needing to install `KeyTool` and a whole JVM on your local machine.
+      KAFKA_SSL_KEYSTORE_FILENAME: 'KafkaBroker.p12'
+      KAFKA_SSL_KEYSTORE_TYPE: 'PKCS12'
+      # NOTE: The setup.sh script uses the same password for both the Key Enc and the Keystore Enc.
+      KAFKA_SSL_KEYSTORE_CREDENTIALS: 'server_password.txt'
+      KAFKA_SSL_KEY_CREDENTIALS: 'server_password.txt'
+      # NOTE: Since we do not have a whole CA chain but rather a single CA Self-Signed CA.
+      #     We can just outright use the CA cert as the truststore, and skip the need to bundle up all the signing chain into a truststore.
+      KAFKA_SSL_TRUSTSTORE_FILENAME: 'KafkaClusterCA.p12'
+      KAFKA_SSL_TRUSTSTORE_TYPE: 'PKCS12'
+      KAFKA_SSL_TRUSTSTORE_CREDENTIALS: 'ca_password.txt'
+      KAFKA_SSL_CLIENT_AUTH: 'required'
+      KAFKA_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: ""
+  broker02:
+    image: apache/kafka:latest
+    ports:
+      - 9094:9094
+      - 9095:9095
+      - 9096:9096
+    volumes:
+      - ./secrets:/etc/kafka/secrets
+      - ./data02:/var/lib/kafka/data
+    environment:
+      KAFKA_NODE_ID: 2
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'INTERNAL-SSL:SSL,EXTERNAL-SSL:SSL,CONTROLLER:PLAINTEXT'
+      # NOTE: Both these following checks leverage KAFKA_ADVERTISED_LISTENERS to eval, 
+      #     See https://github.com/apache/kafka/blob/ccd8330e9eb0e2439f1d025282bef8b724d6ec1d/docker/resources/common-scripts/configure#L68
+      #     `SSL://` in a listener name is required to leverage in build secrets handling
+      #     `SASL_<.*>://` in a listener name is required to leverage the in build scripts
+      # 
+      # NOTE: Be sure to modify the EXTERNAL-SSL listener's address to match the domain or IP.
+      #     The use of 0.0.0.0 will only work in local-only environments.
+      #     The setup.sh script doesn't take care of this, yet.
+      KAFKA_LISTENERS: 'INTERNAL-SSL://:9094,EXTERNAL-SSL://:9095,CONTROLLER://:9096'
+      KAFKA_ADVERTISED_LISTENERS: 'INTERNAL-SSL://broker02:9094,EXTERNAL-SSL://localhost:9095'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'INTERNAL-SSL'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@broker01:9093,2@broker02:9096,3@broker03:9099'
+      KAFKA_LOG_DIRS: '/var/lib/kafka/data'
+      # NOTE: Cluster ID is a Random UUID, that's been base64 encoded and truncated down to 16bits
+      #     Read more here: https://sleeplessbeastie.eu/2021/10/22/how-to-generate-kafka-cluster-id/
+      #     Create your own, if you want:
+      #       - Linux 1 liner: cat /proc/sys/kernel/random/uuid | tr -d '-' | base64 | cut -b 1-22
+      #       - Via Kafka Script: ./bin/kafka-storage.sh random-uuid
+      CLUSTER_ID: 'ZGVjYzlmYjM0YjJhNDE1Yz'
+      # NOTE: Running the setup.sh script is required to leverage the in build secrets creation & handling
+      #     Otherwise, you can create the secrets yourself and them to ./secrets folder
+      #     This repo can assist in creating the TLS Certificates if you are unfamiliar with the process: https://github.com/nerdynick/keystore-scripts
+      # NOTE: We use PKCS12 (.p12) stores instead of the traditional JKS (.jks) stores. 
+      #     This save you from needing to install `KeyTool` and a whole JVM on your local machine.
+      KAFKA_SSL_KEYSTORE_FILENAME: 'KafkaBroker.p12'
+      KAFKA_SSL_KEYSTORE_TYPE: 'PKCS12'
+      # NOTE: The setup.sh script uses the same password for both the Key Enc and the Keystore Enc.
+      KAFKA_SSL_KEYSTORE_CREDENTIALS: 'server_password.txt'
+      KAFKA_SSL_KEY_CREDENTIALS: 'server_password.txt'
+      # NOTE: Since we do not have a whole CA chain but rather a single CA Self-Signed CA.
+      #     We can just outright use the CA cert as the truststore, and skip the need to bundle up all the signing chain into a truststore.
+      KAFKA_SSL_TRUSTSTORE_FILENAME: 'KafkaClusterCA.p12'
+      KAFKA_SSL_TRUSTSTORE_TYPE: 'PKCS12'
+      KAFKA_SSL_TRUSTSTORE_CREDENTIALS: 'ca_password.txt'
+      KAFKA_SSL_CLIENT_AUTH: 'required'
+      KAFKA_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: ""
+  broker03:
+    image: apache/kafka:latest
+    ports:
+      - 9097:9097
+      - 9098:9098
+      - 9099:9099
+    volumes:
+      - ./secrets:/etc/kafka/secrets
+      - ./data03:/var/lib/kafka/data
+    environment:
+      KAFKA_NODE_ID: 3
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'INTERNAL-SSL:SSL,EXTERNAL-SSL:SSL,CONTROLLER:PLAINTEXT'
+      # NOTE: Both these following checks leverage KAFKA_ADVERTISED_LISTENERS to eval, 
+      #     See https://github.com/apache/kafka/blob/ccd8330e9eb0e2439f1d025282bef8b724d6ec1d/docker/resources/common-scripts/configure#L68
+      #     `SSL://` in a listener name is required to leverage in build secrets handling
+      #     `SASL_<.*>://` in a listener name is required to leverage the in build scripts
+      # 
+      # NOTE: Be sure to modify the EXTERNAL-SSL listener's address to match the domain or IP.
+      #     The use of 0.0.0.0 will only work in local-only environments.
+      #     The setup.sh script doesn't take care of this, yet.
+      KAFKA_LISTENERS: 'INTERNAL-SSL://:9097,EXTERNAL-SSL://:9098,CONTROLLER://:9099'
+      KAFKA_ADVERTISED_LISTENERS: 'INTERNAL-SSL://broker03:9097,EXTERNAL-SSL://localhost:9098'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'INTERNAL-SSL'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@broker01:9093,2@broker02:9096,3@broker03:9099'
+      KAFKA_LOG_DIRS: '/var/lib/kafka/data'
+      # NOTE: Cluster ID is a Random UUID, that's been base64 encoded and truncated down to 16bits
+      #     Read more here: https://sleeplessbeastie.eu/2021/10/22/how-to-generate-kafka-cluster-id/
+      #     Create your own, if you want:
+      #       - Linux 1 liner: cat /proc/sys/kernel/random/uuid | tr -d '-' | base64 | cut -b 1-22
+      #       - Via Kafka Script: ./bin/kafka-storage.sh random-uuid
+      CLUSTER_ID: 'ZGVjYzlmYjM0YjJhNDE1Yz'
+      # NOTE: Running the setup.sh script is required to leverage the in build secrets creation & handling
+      #     Otherwise, you can create the secrets yourself and them to ./secrets folder
+      #     This repo can assist in creating the TLS Certificates if you are unfamiliar with the process: https://github.com/nerdynick/keystore-scripts
+      # NOTE: We use PKCS12 (.p12) stores instead of the traditional JKS (.jks) stores. 
+      #     This save you from needing to install `KeyTool` and a whole JVM on your local machine.
+      KAFKA_SSL_KEYSTORE_FILENAME: 'KafkaBroker.p12'
+      KAFKA_SSL_KEYSTORE_TYPE: 'PKCS12'
+      # NOTE: The setup.sh script uses the same password for both the Key Enc and the Keystore Enc.
+      KAFKA_SSL_KEYSTORE_CREDENTIALS: 'server_password.txt'
+      KAFKA_SSL_KEY_CREDENTIALS: 'server_password.txt'
+      # NOTE: Since we do not have a whole CA chain but rather a single CA Self-Signed CA.
+      #     We can just outright use the CA cert as the truststore, and skip the need to bundle up all the signing chain into a truststore.
+      KAFKA_SSL_TRUSTSTORE_FILENAME: 'KafkaClusterCA.p12'
+      KAFKA_SSL_TRUSTSTORE_TYPE: 'PKCS12'
+      KAFKA_SSL_TRUSTSTORE_CREDENTIALS: 'ca_password.txt'
+      KAFKA_SSL_CLIENT_AUTH: 'required'
+      KAFKA_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: ""
