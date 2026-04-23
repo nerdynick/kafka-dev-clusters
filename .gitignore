@@ -1,3 +1,5 @@
 kafka-uno/Makefile.tls
 kafka-tres/Makefile.tls
 packages/**
+.DS_Store
+**/.DS_Store

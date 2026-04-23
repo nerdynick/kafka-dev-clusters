@@ -16,8 +16,12 @@ setup:
 package-kafka-uno: setup
 	tar -czf packages/kafka-uno-$(VERSION).tar.gz --exclude=.gitignore --exclude=data --exclude=output --exclude=secrets --exclude=Makefile* -C ./kafka-uno .
 
+.PHONY: package-kafka-tres
+package-kafka-tres: setup
+	tar -czf packages/kafka-tres-$(VERSION).tar.gz --exclude=.gitignore --exclude=data* --exclude=output --exclude=secrets --exclude=Makefile* -C ./kafka-tres .
+
 .PHONY: package-all
-package-all: package-kafka-uno
+package-all: package-kafka-uno package-kafka-tres
 
 ##
 # Github Targets
